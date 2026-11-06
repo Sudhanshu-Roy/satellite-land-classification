@@ -4,6 +4,8 @@ A deep learning model that classifies satellite images into land-use and land-co
 
 Upload a satellite image, or try a sample tile, and the app returns the predicted class with a score for every class.
 
+**Live demo:** https://satellite-land-cover-classifier.vercel.app
+
 ---
 
 ## Dataset
