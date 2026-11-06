@@ -57,8 +57,17 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Satellite land classification", lifespan=lifespan)
 
-_origins = os.getenv("ALLOWED_ORIGINS", "*").strip()
-allow_origins = ["*"] if _origins == "*" else [item.strip() for item in _origins.split(",") if item.strip()]
+# Comma-separated list. "*" is ignored so an unset or leftover wildcard cannot open the API.
+_DEFAULT_ORIGINS = ",".join(
+    [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ]
+)
+_origins = os.getenv("ALLOWED_ORIGINS", _DEFAULT_ORIGINS).strip()
+if not _origins or _origins == "*":
+    _origins = _DEFAULT_ORIGINS
+allow_origins = [item.strip().rstrip("/") for item in _origins.split(",") if item.strip() and item.strip() != "*"]
 
 app.add_middleware(
     CORSMiddleware,
