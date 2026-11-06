@@ -1,0 +1,10 @@
+# CPU wheels only. The default PyTorch wheel is a large CUDA build and
+# will run out of memory on a small Render instance.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+fastapi==0.139.0
+uvicorn==0.36.0
+python-multipart==0.0.20
+pillow==11.1.0
+torch==2.8.0+cpu
+torchvision==0.23.0+cpu

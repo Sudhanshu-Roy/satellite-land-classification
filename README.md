@@ -1,175 +1,190 @@
-# Satellite Land-Use Classification using Deep Learning
+# Satellite Land Cover Classifier
 
-## Project Overview
-This project builds a deep learning model to classify satellite images into different land-use categories using transfer learning. The model is trained on the EuroSAT dataset and uses a pretrained ResNet18 architecture to identify terrain types such as forests, rivers, residential areas, and agricultural land.
+A deep learning model that classifies satellite images into land-use and land-cover types. A fine-tuned ResNet18, trained on the EuroSAT dataset, reaches **96.8% validation accuracy** across 10 classes. The repository includes the training notebooks and a web app for inference: a FastAPI backend and a React frontend.
 
-The project demonstrates a complete computer vision pipeline including dataset preprocessing, model training, evaluation, prediction visualization, and Grad-CAM interpretability.
+Upload a satellite image, or try a sample tile, and the app returns the predicted class with a score for every class.
 
 ---
 
 ## Dataset
 
-This project uses the **EuroSAT satellite image dataset**, containing approximately **27,000 RGB satellite images across 10 land-use classes**.
+The model is trained on the **EuroSAT** dataset: about **27,000 RGB satellite images** across **10 land-use classes**.
 
-Classes include:
-
-- AnnualCrop  
-- Forest  
-- HerbaceousVegetation  
-- Highway  
-- Industrial  
-- Pasture  
-- PermanentCrop  
-- Residential  
-- River  
-- SeaLake  
+| Group | Classes |
+| --- | --- |
+| Vegetation and agriculture | AnnualCrop, PermanentCrop, Pasture, HerbaceousVegetation, Forest |
+| Built environment | Residential, Industrial, Highway |
+| Water | River, SeaLake |
 
 Dataset source:  
 https://www.kaggle.com/datasets/apollo2506/eurosat-dataset
 
+Download it with:
+
+```bash
+python download_dataset.py
+```
+
 ---
 
-## Model Architecture
+## Model
 
-The model uses **transfer learning with ResNet18**.
+Transfer learning with **ResNet18**:
 
-Steps:
 - Pretrained ResNet18 backbone
-- Final fully connected layer modified for 10 classes
-- Cross-entropy loss for classification
-- Adam optimizer for training
+- Final fully connected layer replaced with 10 outputs
+- Cross-entropy loss
+- Adam optimizer (`lr=0.001`)
+
+Images are resized to **224×224** and scaled with `ToTensor()` only. There is no ImageNet normalization.
+
+The best checkpoint, chosen by validation accuracy, is saved to `backend/model/best_model.pth`.
 
 ---
 
-## Training Pipeline
+## Training and evaluation
 
-1. Dataset loading using `torchvision.datasets.ImageFolder`
-2. Image preprocessing and resizing
-3. Train / validation split
-4. DataLoader for batch training
-5. Model training using PyTorch
-6. Best model checkpoint saved based on validation accuracy
+Run the notebooks from the **project root**, in this order:
 
----
+1. `Notebooks/training.ipynb`
+2. `Notebooks/evaluate.ipynb`
+3. `Notebooks/predict.ipynb`
+4. `Notebooks/gradcam.ipynb`
 
-## Model Performance
+Training loads EuroSAT with `torchvision.datasets.ImageFolder`, splits the data, and writes `backend/model/best_model.pth` whenever validation accuracy improves. Evaluation reports accuracy, a confusion matrix, and a classification report. Grad-CAM shows which regions influenced a prediction.
 
-**Validation Accuracy:** `96.8%`
+**Validation accuracy: 96.8%**
 
-Evaluation metrics include:
+### Confusion matrix
 
-- Accuracy
-- Confusion Matrix
-- Classification Report (Precision, Recall, F1-score)
+<img width="932" height="845" alt="Confusion matrix" src="https://github.com/user-attachments/assets/ecc90b2c-083d-4f5b-b7e7-87eb320037bb" />
 
----
+### Example predictions
 
-## Confusion Matrix
+<img width="950" height="672" alt="Prediction examples" src="https://github.com/user-attachments/assets/de845b76-2122-4acf-b393-cb158f8f2fff" />
 
-<img width="932" height="845" alt="image" src="https://github.com/user-attachments/assets/ecc90b2c-083d-4f5b-b7e7-87eb320037bb" />
+### Grad-CAM
+
+<img width="950" height="315" alt="Grad-CAM visualization" src="https://github.com/user-attachments/assets/89ffd154-648c-4c8e-a6cd-8ab6d21b4791" />
 
 ---
 
-## Prediction Visualization
+## Web app
 
-Example predictions on validation images.
+`backend/` is a FastAPI service that loads `backend/model/best_model.pth` and classifies an uploaded image on CPU.
 
-```
-Satellite Image → Predicted Land Class
-```
-<img width="950" height="672" alt="image" src="https://github.com/user-attachments/assets/de845b76-2122-4acf-b393-cb158f8f2fff" />
+- `GET /health` checks that the service is up
+- `POST /predict` accepts an image and returns the top class plus all 10 scores
 
-
----
-
-## Model Interpretability (Grad-CAM)
-
-Grad-CAM visualization highlights the regions of the satellite image that influenced the model's prediction.
-
-Example visualization:
-
-```
-Original Image | Heatmap | Overlay
-```
-
-<img width="950" height="315" alt="image" src="https://github.com/user-attachments/assets/89ffd154-648c-4c8e-a6cd-8ab6d21b4791" />
-
+`frontend/` is a Vite + React app. It waits on the loading screen until `/health` succeeds, then lets you upload an image or step through one sample tile from each EuroSAT class. Sample images live in `frontend/public/samples/`.
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
 satellite-land-classification
 │
 ├── Notebooks/
-│   ├── train.ipynb
+│   ├── training.ipynb
 │   ├── evaluate.ipynb
 │   ├── predict.ipynb
 │   └── gradcam.ipynb
 │
-├── models/
-│   └── best_model.pth
+├── backend/
+│   ├── app.py
+│   ├── requirements.txt
+│   ├── Procfile
+│   ├── .python-version
+│   └── model/
+│       └── best_model.pth
 │
-├── .gitignore
-├── LICENSE
+├── frontend/
+│   ├── src/
+│   ├── public/samples/
+│   ├── package.json
+│   └── vercel.json
+│
 ├── download_dataset.py
 ├── requirements.txt
+├── LICENSE
 └── README.md
 ```
 
+`requirements.txt` at the root is for the notebooks. `backend/requirements.txt` is for the API and installs the CPU build of PyTorch.
+
 ---
 
-## Installation
-
-Clone the repository:
+## Run locally
 
 ```bash
 git clone https://github.com/Sudhanshu-Roy/satellite-land-classification.git
 cd satellite-land-classification
 ```
 
-Install dependencies:
+Notebooks:
 
 ```bash
 pip install -r requirements.txt
 ```
----
 
-3. Open the notebooks
+API:
 
-Run the notebooks in the following order:
-
-```
-Notebooks/training.ipynb
-Notebooks/evaluate.ipynb
-Notebooks/predict.ipynb
-Notebooks/gradcam.ipynb
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
+Frontend, in another terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5173. The page calls http://localhost:8000 unless `VITE_API_URL` is set.
+
 ---
 
-## Future Improvements
+## Deployment
 
-Possible improvements include:
+The API is meant for **Render** and the frontend for **Vercel**.
 
-- Training with deeper architectures (ResNet50 / EfficientNet)
-- Hyperparameter tuning
-- Real-time satellite image classification interface
-- Satellite change detection using temporal image pairs
+**Render**
+
+- Root directory: `backend`
+- Runtime: Python. `.python-version` pins 3.12, because the current Render default does not have a matching PyTorch wheel.
+- Build command: `pip install -r requirements.txt`
+- Start command: `uvicorn app:app --host 0.0.0.0 --port $PORT`
+- Use an instance with at least 2 GB of RAM. The 512 MB plan runs out of memory while loading PyTorch.
+
+**Vercel**
+
+- Root directory: `frontend`
+- Framework: Vite
+- Environment variable: `VITE_API_URL` set to the Render URL, with no trailing path
+- Redeploy after setting that variable. Vite reads it at build time.
+
+The first request after Render has been idle can take about a minute. The page stays on the loading screen until the API responds.
 
 ---
 
-## Technologies Used
+## Technologies
 
-- Python
-- PyTorch
-- Torchvision
-- NumPy
-- Matplotlib
-- Scikit-learn
-- OpenCV
-- Grad-CAM
+- Python, PyTorch, Torchvision
+- FastAPI, Uvicorn
+- React, Vite
+- NumPy, Matplotlib, Scikit-learn, OpenCV, Grad-CAM
+
+---
+
+## Possible next steps
+
+- Train a deeper backbone, such as ResNet50 or EfficientNet
+- Tune hyperparameters
+- Detect change between satellite images taken at different times
 
 ---
 
@@ -178,5 +193,5 @@ Possible improvements include:
 **Sudhanshu Roy**  
 Machine Learning & AI Enthusiast
 
-GitHub: https://github.com/Sudhanshu-Roy 
-LinkedIn: www.linkedin.com/in/gecraiandds240200143065
+GitHub: https://github.com/Sudhanshu-Roy  
+LinkedIn: https://www.linkedin.com/in/gecraiandds240200143065
